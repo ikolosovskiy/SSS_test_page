@@ -460,8 +460,8 @@
 
         function login() {
             const pass = document.getElementById('admin-password').value;
-            // Стандартний пароль
-            if (pass === 'admin') {
+            // Перевірка нового унікального пароля адміністратора
+            if (pass === '6Vf–sneN=}N;:!n7NO8F') {
                 sessionStorage.setItem('sss_is_admin', 'true');
                 enableAdminMode();
                 closeLoginModal();
