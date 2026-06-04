@@ -329,7 +329,34 @@
                 return { ...item, currentCategory, isExpired };
             });
 
-            renderTabs();
+            // Рендеринг вкладок (тепер вони завжди стабільні та не зникають, навіть якщо порожні)
+        function renderTabs() {
+            const container = document.getElementById('tabs-container');
+            container.innerHTML = '';
+
+            // Завжди відображаємо всі 4 категорії, визначені у константі CATEGORIES
+            const visibleCategories = Object.keys(CATEGORIES);
+
+            if (!visibleCategories.includes(activeTab) && visibleCategories.length > 0) {
+                activeTab = visibleCategories[0];
+            }
+
+            visibleCategories.forEach(catId => {
+                const isActive = catId === activeTab;
+                const activeClasses = "text-primary border-b-2 border-primary";
+                const inactiveClasses = "text-gray-500 hover:text-primary";
+                
+                const btn = document.createElement('button');
+                btn.className = `flex-1 text-center pb-2 transition-all focus:outline-none ${isActive ? activeClasses : inactiveClasses}`;
+                btn.textContent = CATEGORIES[catId];
+                btn.onclick = () => {
+                    activeTab = catId;
+                    renderTabs();
+                    renderCards();
+                };
+                container.appendChild(btn);
+            });
+        };
             renderCards();
         }
 
