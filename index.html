@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <!-- Хедер з логотипом та кнопкою Увійти -->
+    <!-- Хедер з логотипом та кнопкою Увійти (для кнопки додано z-30) -->
     <header class="w-full max-w-md flex flex-col items-center my-4 px-2 relative">
         <button id="login-btn" onclick="openLoginModal()" class="absolute right-2 top-0 z-30 text-xs border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
             Увійти
@@ -58,7 +58,7 @@
         </div>
     </header>
 
-    <!-- Навігація / Інтерактивні вкладки -->
+    <!-- Навігація / Інтерактивні вкладки (генеруються динамічно через JS) -->
     <div id="tabs-container" class="w-full max-w-md flex border-b mb-6 text-sm font-bold"></div>
 
     <!-- Основний контейнер для карток (без overflow-hidden, щоб меню не обрізалося) -->
@@ -131,7 +131,7 @@
                     <label class="block font-semibold mb-1 text-gray-700 flex items-center gap-1.5">
                         Посилання на реєстрацію <span class="text-xs text-gray-400 font-normal">(опціонально)</span>
                     </label>
-                    <input type="url" id="item-reg-url" placeholder="Для вкладки реєстрацій" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                    <input type="url" id="item-reg-url" placeholder="Для вкладки реєстрацій (якщо потрібна кнопка)" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
                 </div>
 
                 <div>
@@ -156,18 +156,19 @@
         const SUPABASE_ANON_KEY = "sb_publishable_BGyc87lQIPlziBbIC2A_PQ_pGnlthMw";
 
         // Безпечна ініціалізація клієнта Supabase (без конфліктів)
-        let supabase = null;
+        let supabaseClient = null;
         try {
             if (SUPABASE_URL.includes("ВАШ_ПРОЄКТ") || SUPABASE_ANON_KEY.includes("ВАШ_ПУБЛІЧНИЙ_ANON_KEY")) {
                 console.warn("Увага: Ключі Supabase не налаштовано. Працює локальний демо-режим.");
             } else {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const { createClient } = supabase;
+                supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
         } catch (e) {
             console.error("Не вдалося ініціалізувати Supabase:", e);
         }
 
-        // ДЕФОЛТНІ ДАНІ
+        // ДЕФОЛТНІ ДАНІ (для автоматичного заповнення під час першого запуску)
         const DEFAULT_ITEMS = [
             {
                 id: "1",
@@ -180,7 +181,7 @@
                 id: "2",
                 title: "Послуги з шиття: як хаб у Миколаєві допомагає постраждалому населенню",
                 category: "news",
-                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-mykolaievi-dopomahaie-postrazhdalomu-naselenniu/",
+                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-myколаievi-dopomahaie-postrazhdalomu-naselenniu/",
                 image: "https://sss-ua.org/wp-content/uploads/2026/05/pani-larisa-768x1024.jpg"
             },
             {
@@ -215,17 +216,17 @@
         let activeDropdownId = null;
         let localUploadedFile = null;
 
-        // Використовуємо DOMContentLoaded для миттєвого запуску без очікування важких картинок
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Запускаємо ініціалізацію миттєво (оскільки скрипт розміщений внизу body, DOM вже повністю готовий)
+        (async () => {
             if (sessionStorage.getItem('sss_is_admin') === 'true') {
                 enableAdminMode();
             }
             await fetchItems();
-        });
+        })();
 
         // Завантаження даних з Supabase
         async function fetchItems() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 console.log("Завантаження дефолтних посилань (локальний режим)...");
                 items = DEFAULT_ITEMS;
                 processDataAndRender();
@@ -233,7 +234,7 @@
             }
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('hub_items')
                     .select('*')
                     .order('position', { ascending: true });
@@ -245,7 +246,7 @@
                     return;
                 }
 
-                // Автозаповнення порожньої бази даних
+                // Якщо таблиця в Supabase ще порожня, завантажуємо туди дефолтний контент
                 if (data.length === 0) {
                     console.log("База даних порожня. Запускаємо автозаповнення демо-даними...");
                     
@@ -259,7 +260,7 @@
                         position: idx
                     }));
 
-                    const { data: seededData, error: seedError } = await supabase
+                    const { data: seededData, error: seedError } = await supabaseClient
                         .from('hub_items')
                         .insert(seedData)
                         .select();
@@ -299,7 +300,7 @@
             processDataAndRender();
         }
 
-        // Обробка дат та сортування (ліміт 10 елементів на категорію)
+        // Обробка дат та сортування (ліміт 10 елементів на категорію, старіші летять в архів)
         function processDataAndRender() {
             const now = new Date();
             const categoryCounts = { news: 0, events: 0, materials: 0 };
@@ -321,7 +322,7 @@
                     if (categoryCounts[item.category] < 10) {
                         categoryCounts[item.category]++;
                     } else {
-                        currentCategory = 'archive';
+                        currentCategory = 'archive'; // Понад 10 посилань у вкладці автоматично йдуть в архів
                     }
                 }
 
@@ -460,6 +461,7 @@
 
         function login() {
             const pass = document.getElementById('admin-password').value;
+            // Стандартний пароль
             if (pass === 'admin') {
                 sessionStorage.setItem('sss_is_admin', 'true');
                 enableAdminMode();
@@ -470,6 +472,7 @@
             }
         }
 
+        // Вихід
         function logout() {
             sessionStorage.removeItem('sss_is_admin');
             isAdmin = false;
@@ -521,9 +524,9 @@
                     position: idx
                 }));
 
-                if (supabase) {
+                if (supabaseClient) {
                     try {
-                        const { error } = await supabase.from('hub_items').upsert(updates);
+                        const { error } = await supabaseClient.from('hub_items').upsert(updates);
                         if (error) console.error("Помилка збереження сортування:", error);
                     } catch (dragErr) {
                         console.error("Помилка збереження позицій в БД:", dragErr);
@@ -622,20 +625,20 @@
             document.getElementById('preview-text').classList.remove('hidden');
         }
 
-        // Завантаження фото в Supabase Storage
+        // Завантаження фото в Supabase Storage (Public bucket 'hub-images')
         async function uploadFileToSupabase(file) {
-            if (!supabase) return "";
+            if (!supabaseClient) return "";
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
             const filePath = `images/${fileName}`;
 
-            const { data, error } = await supabase.storage
+            const { data, error } = await supabaseClient.storage
                 .from('hub-images')
                 .upload(filePath, file);
 
             if (error) throw error;
 
-            const { data: { publicUrl } } = supabase.storage
+            const { data: { publicUrl } } = supabaseClient.storage
                 .from('hub-images')
                 .getPublicUrl(filePath);
 
@@ -665,7 +668,7 @@
             try {
                 let imageUrl = "";
 
-                if (localUploadedFile && supabase) {
+                if (localUploadedFile && supabaseClient) {
                     imageUrl = await uploadFileToSupabase(localUploadedFile);
                 } else {
                     imageUrl = document.getElementById('item-image-url').value.trim();
@@ -683,16 +686,16 @@
                     dbPayload.image = imageUrl;
                 }
 
-                if (supabase) {
+                if (supabaseClient) {
                     if (editId) {
-                        const { error } = await supabase
+                        const { error } = await supabaseClient
                             .from('hub_items')
                             .update(dbPayload)
                             .eq('id', editId);
                         if (error) throw error;
                     } else {
                         dbPayload.position = items.length;
-                        const { error } = await supabase
+                        const { error } = await supabaseClient
                             .from('hub_items')
                             .insert([dbPayload]);
                         if (error) throw error;
@@ -700,6 +703,7 @@
                     closeModal();
                     await fetchItems();
                 } else {
+                    // Якщо Supabase не підключено — працюємо у пам'яті (демо-режим)
                     if (editId) {
                         const idx = items.findIndex(i => i.id === editId);
                         if (idx !== -1) {
@@ -748,9 +752,9 @@
         // Видалення
         async function deleteItem(itemId) {
             if (confirm("Ви дійсно хочете видалити це посилання?")) {
-                if (supabase) {
+                if (supabaseClient) {
                     try {
-                        const { error } = await supabase
+                        const { error } = await supabaseClient
                             .from('hub_items')
                             .delete()
                             .eq('id', itemId);
