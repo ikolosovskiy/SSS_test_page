@@ -48,13 +48,12 @@
         </div>
     </div>
 
-    <!-- Хедер з логотипом та кнопкою Увійти -->
+    <!-- Хедер з логотипом та кнопкою Увійти (для кнопки додано z-30) -->
     <header class="w-full max-w-md flex flex-col items-center my-4 px-2 relative">
-        <button id="login-btn" onclick="openLoginModal()" class="absolute right-2 top-0 text-xs border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
+        <button id="login-btn" onclick="openLoginModal()" class="absolute right-2 top-0 z-30 text-xs border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
             Увійти
         </button>
         <div class="w-full flex items-center justify-center mt-8">
-            <!-- Скрипт автоматично підвантажить логотип з вашого сайту, якщо локального файлу немає -->
             <img src="./1-02.png" alt="SSS Logo" class="w-full h-auto max-h-24 object-contain" onerror="this.src='https://sss-ua.org/wp-content/uploads/2022/11/logo_main.png'">
         </div>
     </header>
@@ -181,7 +180,7 @@
                 id: "2",
                 title: "Послуги з шиття: як хаб у Миколаєві допомагає постраждалому населенню",
                 category: "news",
-                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-mykolaievi-dopomahaie-postrazhdalomu-naselenniu/",
+                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-myколаievi-dopomahaie-postrazhdalomu-naselenniu/",
                 image: "https://sss-ua.org/wp-content/uploads/2026/05/pani-larisa-768x1024.jpg"
             },
             {
@@ -232,42 +231,55 @@
                 return;
             }
 
-            const { data, error } = await supabase
-                .from('hub_items')
-                .select('*')
-                .order('position', { ascending: true });
-
-            if (error) {
-                console.error("Помилка зв'язку з Supabase, завантажуємо локальний бекап:", error);
-                items = DEFAULT_ITEMS;
-                processDataAndRender();
-                return;
-            }
-
-            // Якщо таблиця в Supabase ще порожня, завантажуємо туди дефолтний контент
-            if (data.length === 0) {
-                console.log("База даних порожня. Запускаємо автозаповнення демо-даними...");
-                
-                const seedData = DEFAULT_ITEMS.map((item, idx) => ({
-                    title: item.title,
-                    url: item.url,
-                    category: item.category,
-                    image: item.image,
-                    reg_url: item.regUrl || null,
-                    expire_date: item.expireDate || null,
-                    position: idx
-                }));
-
-                const { data: seededData, error: seedError } = await supabase
+            try {
+                const { data, error } = await supabase
                     .from('hub_items')
-                    .insert(seedData)
-                    .select();
+                    .select('*')
+                    .order('position', { ascending: true });
 
-                if (seedError) {
-                    console.error("Не вдалося виконати автозаповнення:", seedError);
+                if (error) {
+                    console.error("Помилка зв'язку з Supabase, завантажуємо локальний бекап:", error);
                     items = DEFAULT_ITEMS;
+                    processDataAndRender();
+                    return;
+                }
+
+                // Якщо таблиця в Supabase ще порожня, завантажуємо туди дефолтний контент
+                if (data.length === 0) {
+                    console.log("База даних порожня. Запускаємо автозаповнення демо-даними...");
+                    
+                    const seedData = DEFAULT_ITEMS.map((item, idx) => ({
+                        title: item.title,
+                        url: item.url,
+                        category: item.category,
+                        image: item.image,
+                        reg_url: item.regUrl || null,
+                        expire_date: item.expireDate || null,
+                        position: idx
+                    }));
+
+                    const { data: seededData, error: seedError } = await supabase
+                        .from('hub_items')
+                        .insert(seedData)
+                        .select();
+
+                    if (seedError) {
+                        console.error("Не вдалося виконати автозаповнення:", seedError);
+                        items = DEFAULT_ITEMS;
+                    } else {
+                        items = seededData.map(row => ({
+                            id: row.id,
+                            title: row.title,
+                            url: row.url,
+                            category: row.category,
+                            image: row.image,
+                            regUrl: row.reg_url,
+                            expireDate: row.expire_date,
+                            position: row.position
+                        }));
+                    }
                 } else {
-                    items = seededData.map(row => ({
+                    items = data.map(row => ({
                         id: row.id,
                         title: row.title,
                         url: row.url,
@@ -278,17 +290,9 @@
                         position: row.position
                     }));
                 }
-            } else {
-                items = data.map(row => ({
-                    id: row.id,
-                    title: row.title,
-                    url: row.url,
-                    category: row.category,
-                    image: row.image,
-                    regUrl: row.reg_url,
-                    expireDate: row.expire_date,
-                    position: row.position
-                }));
+            } catch (dbErr) {
+                console.error("Помилка роботи з БД, увімкнено резервний режим:", dbErr);
+                items = DEFAULT_ITEMS;
             }
 
             processDataAndRender();
@@ -371,7 +375,6 @@
 
             filtered.forEach((item, index) => {
                 const card = document.createElement('div');
-                // Прибрано overflow-hidden з картки, щоб не зрізати меню "Три крапки"
                 card.className = "relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer";
                 
                 if (isAdmin) {
@@ -412,7 +415,6 @@
                         <button onclick="toggleDropdown(event, '${item.id}')" class="p-1 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition focus:outline-none">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
                         </button>
-                        <!-- Меню дій (вирівняно та тепер не зрізається) -->
                         <div id="dropdown-${item.id}" class="hidden absolute right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-xl text-xs overflow-hidden z-30">
                             <button onclick="editItem('${item.id}')" class="w-full text-left px-3 py-2.5 hover:bg-gray-100 text-navy font-semibold border-b border-gray-100">Редагувати</button>
                             <button onclick="deleteItem('${item.id}')" class="w-full text-left px-3 py-2.5 hover:bg-gray-50 text-crimson font-semibold border-b border-gray-100">Видалити</button>
@@ -428,7 +430,6 @@
                     ${adminMenuHTML}
                     <div class="p-4 ${isAdmin ? 'pl-8' : ''}">
                         <div class="flex items-center gap-4">
-                            <!-- Округлений контейнер для картинки -->
                             <div class="w-24 aspect-[547/318] bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
                                 <img class="w-full h-full object-cover" src="${item.image}" alt="${item.title}" onerror="this.src='https://placehold.co/547x318/f3f4f6/9ca3af?text=No+Photo'">
                             </div>
@@ -492,6 +493,7 @@
             e.dataTransfer.effectAllowed = 'move';
         }
 
+        // Дозволяємо перетягування
         function handleDragOver(e) { e.preventDefault(); }
 
         async function handleDrop(e, targetIndex) {
@@ -521,8 +523,12 @@
                 }));
 
                 if (supabase) {
-                    const { error } = await supabase.from('hub_items').upsert(updates);
-                    if (error) console.error("Помилка збереження сортування:", error);
+                    try {
+                        const { error } = await supabase.from('hub_items').upsert(updates);
+                        if (error) console.error("Помилка збереження сортування:", error);
+                    } catch (dragErr) {
+                        console.error("Помилка збереження позицій в БД:", dragErr);
+                    }
                 }
 
                 processDataAndRender();
@@ -695,7 +701,7 @@
                     closeModal();
                     await fetchItems();
                 } else {
-                    // Якщо Supabase не підключено — демо-режим
+                    // Якщо Supabase не підключено — працюємо у пам'яті (демо-режим)
                     if (editId) {
                         const idx = items.findIndex(i => i.id === editId);
                         if (idx !== -1) {
@@ -745,16 +751,20 @@
         async function deleteItem(itemId) {
             if (confirm("Ви дійсно хочете видалити це посилання?")) {
                 if (supabase) {
-                    const { error } = await supabase
-                        .from('hub_items')
-                        .delete()
-                        .eq('id', itemId);
+                    try {
+                        const { error } = await supabase
+                            .from('hub_items')
+                            .delete()
+                            .eq('id', itemId);
 
-                    if (error) {
-                        console.error(error);
-                        alert("Не вдалося видалити елемент з хмари.");
-                    } else {
-                        await fetchItems();
+                        if (error) {
+                            console.error(error);
+                            alert("Не вдалося видалити елемент з хмари.");
+                        } else {
+                            await fetchItems();
+                        }
+                    } catch (delErr) {
+                        console.error("Помилка видалення:", delErr);
                     }
                 } else {
                     items = items.filter(i => i.id !== itemId);
