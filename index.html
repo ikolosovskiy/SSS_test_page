@@ -6,189 +6,633 @@
     <title>SSS-UA | Важливі посилання</title>
     <!-- Підключаємо Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Налаштування фірмових кольорів організації в Tailwind
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#214e34',     // Зелений
+                        accentGold: '#e09f3e',  // Жовтий / Золотий
+                        navy: '#021538',        // Темно-синій
+                        crimson: '#9d292b'      // Червоний
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Стиль для елемента, який перетягують */
+        .dragging {
+            opacity: 0.5;
+            border: 2px dashed #214e34;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col items-center p-4">
 
-    <!-- Хедер з логотипом -->
-    <header class="w-full max-w-md text-center my-6 px-2">
-        <div class="w-full flex items-center justify-center">
-            <img src="./1-02.png" alt="SSS Logo" class="w-full h-auto object-contain">
+    <!-- Панель адміна (показується тільки коли авторизовано) -->
+    <div id="admin-bar" class="w-full max-w-md bg-navy text-white text-xs px-4 py-2.5 rounded-xl mb-4 hidden flex items-center justify-between shadow-md">
+        <span class="font-semibold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Режим адміна
+        </span>
+        <div class="flex gap-2">
+            <button onclick="openModal()" class="bg-primary hover:bg-opacity-90 px-3 py-1 rounded font-bold transition">
+                + Додати
+            </button>
+            <button onclick="exportData()" class="bg-accentGold hover:bg-opacity-90 text-navy px-3 py-1 rounded font-bold transition">
+                Експорт
+            </button>
+            <button onclick="logout()" class="bg-crimson hover:bg-opacity-90 px-3 py-1 rounded font-bold transition">
+                Вийти
+            </button>
+        </div>
+    </div>
+
+    <!-- Хедер з логотипом та кнопкою Увійти -->
+    <header class="w-full max-w-md flex flex-col items-center my-4 px-2 relative">
+        <button id="login-btn" onclick="openLoginModal()" class="absolute right-2 top-0 text-xs border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
+            Увійти
+        </button>
+        <div class="w-full flex items-center justify-center mt-8">
+            <!-- Замініть шлях на ваш логотип -->
+            <img src="./1-02.png" alt="SSS Logo" class="w-full h-auto max-h-24 object-contain" onerror="this.src='https://sss-ua.org/wp-content/uploads/2022/11/logo_main.png'">
         </div>
     </header>
 
-    <!-- Навігація / Інтерактивні вкладки (генеруються динамічно через JS) -->
+    <!-- Навігація / Інтерактивні вкладки -->
     <div id="tabs-container" class="w-full max-w-md flex border-b mb-6 text-sm font-bold">
-        <!-- Сюди додаватимуться кнопки категорій -->
+        <!-- Сюди рендеряться вкладки -->
     </div>
 
-    <!-- Основний контейнер для карток -->
+    <!-- Контентний блок з картками -->
     <main id="content-container" class="w-full max-w-md space-y-4">
-        <!-- Сюди рендеритимуться картки для вибраної категорії -->
+        <!-- Сюди рендеряться картки -->
     </main>
 
     <!-- Футер -->
-    <footer class="mt-8 text-xs text-gray-400">
+    <footer class="mt-12 mb-6 text-xs text-gray-400 text-center">
         © 2026 БФ «Стабілізейшен Суппорт Сервісез»
     </footer>
 
-    <!-- Підключаємо зовнішній файл з даними -->
-    <script src="data.js"></script>
+    <!-- ================= МОДАЛЬНЕ ВІКНО: ВХІД ================= -->
+    <div id="login-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
+            <h3 class="font-bold text-lg text-navy mb-4 text-center">Вхід в адмін-панель</h3>
+            <input type="password" id="admin-password" placeholder="Введіть пароль" class="w-full border p-2.5 rounded-lg mb-4 text-sm focus:outline-none focus:border-primary">
+            <div id="login-error" class="text-xs text-crimson mb-3 hidden text-center">Невірний пароль!</div>
+            <div class="flex gap-2">
+                <button onclick="closeLoginModal()" class="flex-1 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition">Скасувати</button>
+                <button onclick="login()" class="flex-1 py-2 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition">Увійти</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- Скрипт динамічного рендерингу -->
+    <!-- ================= МОДАЛЬНЕ ВІКНО: ДОДАННЯ / РЕДАГУВАННЯ ================= -->
+    <div id="item-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl my-8">
+            <h3 id="modal-title" class="font-bold text-lg text-navy mb-4">Додати посилання</h3>
+            
+            <input type="hidden" id="edit-id">
+
+            <div class="space-y-4 text-sm">
+                <div>
+                    <label class="block font-semibold mb-1 text-gray-700">Заголовок</label>
+                    <input type="text" id="item-title" placeholder="Введіть назву новини чи заходу" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1 text-gray-700">Основне посилання (Детальніше)</label>
+                    <input type="url" id="item-url" placeholder="https://example.com" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1 text-gray-700">Категорія</label>
+                    <select id="item-category" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                        <option value="news">Новини</option>
+                        <option value="events">Реєстрація</option>
+                        <option value="materials">Корисні матеріали</option>
+                    </select>
+                </div>
+
+                <div class="border-t pt-3">
+                    <label class="block font-semibold mb-1 text-gray-700 flex justify-between items-center">
+                        <span>Зображення</span>
+                        <span class="text-xs text-gray-400 font-normal">Локальний файл або URL</span>
+                    </label>
+                    <input type="file" id="item-file" accept="image/*" onchange="previewUploadedImage(event)" class="w-full border p-1 rounded-lg text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-opacity-90">
+                    <div class="text-center my-2 text-xs text-gray-400">- або вставте URL картинки -</div>
+                    <input type="url" id="item-image-url" oninput="previewUrlImage()" placeholder="https://example.com/photo.jpg" class="w-full border p-2.5 rounded-lg text-xs focus:outline-none focus:border-primary">
+                    
+                    <!-- Прев'ю картинки перед збереженням -->
+                    <div class="mt-3 flex items-center gap-4 border p-2 rounded-lg bg-gray-50">
+                        <div class="w-16 aspect-[547/318] bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                            <img id="img-preview" src="" class="w-full h-full object-cover hidden" alt="Preview">
+                        </div>
+                        <span id="preview-text" class="text-xs text-gray-400">Зображення не вибрано</span>
+                    </div>
+                </div>
+
+                <div class="border-t pt-3">
+                    <label class="block font-semibold mb-1 text-gray-700 flex items-center gap-1.5">
+                        Посилання на реєстрацію <span class="text-xs text-gray-400 font-normal">(опціонально)</span>
+                    </label>
+                    <input type="url" id="item-reg-url" placeholder="Для вкладки реєстрацій (якщо потрібна кнопка)" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1 text-gray-700 flex items-center gap-1.5">
+                        Дата завершення події <span class="text-xs text-gray-400 font-normal">(опціонально)</span>
+                    </label>
+                    <input type="date" id="item-expire" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                    <p class="text-[10px] text-gray-400 mt-1">Після цієї дати картка автоматично потрапить в "Архів", а реєстрація закриється.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModal()" class="flex-1 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition">Скасувати</button>
+                <button onclick="saveItem()" class="flex-1 py-2 text-sm bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition">Зберегти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ЛОГІКА ДОДАТКУ ================= -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof SSS_DATA === 'undefined') {
-                console.error("Помилка: Файл data.js не знайдено або він завантажився невірно.");
-                return;
+        // ДЕФОЛТНІ ДАНІ (використовуються, якщо localStorage порожній)
+        const DEFAULT_ITEMS = [
+            {
+                id: "1",
+                title: "Допомога для Бериславської громади, яка живе під обстрілами",
+                category: "news",
+                url: "https://sss-ua.org/news/dopomoha-dlia-beryslavskoi-hromady-iaka-zhyve-pid-obstrilamy/",
+                image: "https://sss-ua.org/wp-content/uploads/2026/05/Bereslaska-hromada.jpg"
+            },
+            {
+                id: "2",
+                title: "Послуги з шиття: як хаб у Миколаєві допомагає постраждалому населенню",
+                category: "news",
+                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-mykolaievi-dopomahaie-postrazhdalomu-naselenniu/",
+                image: "https://sss-ua.org/wp-content/uploads/2026/05/pani-larisa-768x1024.jpg"
+            },
+            {
+                id: "3",
+                title: "Як взяти участь у форумі Рад ВПО?",
+                category: "events",
+                url: "https://sss-ua.org/yak-vziaty-uchast-u-forumi-rad-vpo/",
+                regUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfwA3l1T40rU98abvij3HM8A-cFobo4mhfAeZnio-vxS-vMMQ/viewform",
+                image: "https://sss-ua.org/wp-content/uploads/2025/04/YAk-vziaty-uchast_rozdil_Forum_Rad_VPO_1200x630_eng-copy-6-1.png",
+                expireDate: "2026-06-15"
+            },
+            {
+                id: "4",
+                title: "Матеріали для навчання координаторів гуманітарних штабів",
+                category: "materials",
+                url: "https://sss-ua.org/",
+                image: "https://sss-ua.org/wp-content/uploads/2026/04/seriia-6_ua_856x450-1024x538.png"
+            }
+        ];
+
+        const CATEGORIES = {
+            news: "Новини",
+            events: "Реєстрація",
+            materials: "Корисні матеріали",
+            archive: "Архів"
+        };
+
+        let items = [];
+        let processedItems = [];
+        let activeTab = 'news';
+        let isAdmin = false;
+        let activeDropdownId = null;
+        let uploadedBase64Image = "";
+
+        // Ініціалізація
+        window.addEventListener('load', () => {
+            // Завантаження даних з localStorage
+            const localData = localStorage.getItem('sss_hub_items');
+            if (localData) {
+                items = JSON.parse(localData);
+            } else {
+                items = DEFAULT_ITEMS;
+                localStorage.setItem('sss_hub_items', JSON.stringify(items));
             }
 
-            const colorMap = {
-                blue: { text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-600' },
-                yellow: { text: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-600' },
-                green: { text: 'text-green-600', bg: 'bg-green-50', border: 'border-green-600' },
-                purple: { text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-600' },
-                red: { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-600' },
-                gray: { text: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-600' }
-            };
+            // Перевірка авторизації
+            if (sessionStorage.getItem('sss_is_admin') === 'true') {
+                enableAdminMode();
+            }
 
+            processDataAndRender();
+        });
+
+        // Обробка дат та сортування
+        function processDataAndRender() {
             const now = new Date();
-            let activeTab = 'news';
-
-            // 1. Попередня обробка даних: перевірка дати закінчення (expireDate)
-            const processedItems = SSS_DATA.items.map(item => {
+            processedItems = items.map(item => {
                 let currentCategory = item.category;
                 let isExpired = false;
 
                 if (item.expireDate) {
-                    const expireDate = new Date(item.expireDate);
-                    // Якщо дата закінчення минула (порівняння за датами)
-                    if (expireDate < now) {
+                    const expire = new Date(item.expireDate);
+                    if (expire < now) {
                         currentCategory = 'archive';
                         isExpired = true;
                     }
                 }
-
-                return {
-                    ...item,
-                    currentCategory,
-                    isExpired
-                };
+                return { ...item, currentCategory, isExpired };
             });
 
-            // 2. Функція відображення карток
-            function renderItems() {
-                const container = document.getElementById('content-container');
-                container.innerHTML = '';
-
-                const filtered = processedItems.filter(item => item.currentCategory === activeTab);
-
-                if (filtered.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center text-gray-400 py-8 text-sm">
-                            Наразі немає інформації у цьому розділі.
-                        </div>`;
-                    return;
-                }
-
-                filtered.forEach(item => {
-                    const colors = colorMap[item.tagColor] || colorMap.blue;
-                    let cardHTML = '';
-
-                    // Якщо є посилання на реєстрацію (regUrl) — будуємо картку з двома кнопками
-                    if (item.regUrl) {
-                        cardHTML = `
-                            <div onclick="if (!event.target.closest('a') && !event.target.closest('button')) window.open('${item.url}', '_blank')"
-                                 class="block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer">
-                                <div class="p-4">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-28 aspect-[547/318] bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
-                                            <img class="w-full h-full object-cover" src="${item.image}" alt="${item.title}">
-                                        </div>
-                                        <div class="flex-grow">
-                                            <span class="text-[10px] uppercase tracking-wider font-bold ${colors.text} ${colors.bg} px-2 py-0.5 rounded">${item.tag}</span>
-                                            <h3 class="font-semibold text-sm mt-1.5 leading-snug text-gray-900">${item.title}</h3>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4 flex gap-2 border-t pt-3">
-                                        <a href="${item.url}" target="_blank" class="flex-1 text-center text-xs font-semibold py-2.5 px-3 border ${colors.border} ${colors.text} rounded-lg hover:bg-gray-50 transition">
-                                            Детальніше
-                                        </a>
-                                        ${item.isExpired ? `
-                                            <button disabled class="flex-1 text-center text-xs font-semibold py-2.5 px-3 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed">
-                                                Завершено
-                                            </button>
-                                        ` : `
-                                            <a href="${item.regUrl}" target="_blank" class="flex-1 text-center text-xs font-semibold py-2.5 px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                                                Зареєструватись
-                                            </a>
-                                        `}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        // Звичайна картка-посилання (наприклад, для новин чи матеріалів)
-                        cardHTML = `
-                            <a href="${item.url}" target="_blank" 
-                               class="block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:scale-[1.01] transition-all duration-200">
-                                <div class="p-4 flex items-center gap-4">
-                                    <div class="w-28 aspect-[547/318] bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
-                                        <img class="w-full h-full object-cover" src="${item.image}" alt="${item.title}">
-                                    </div>
-                                    <div class="flex-grow">
-                                        <span class="text-[10px] uppercase tracking-wider font-bold ${colors.text} ${colors.bg} px-2 py-0.5 rounded">${item.tag}</span>
-                                        <h3 class="font-semibold text-sm mt-1.5 leading-snug text-gray-900">${item.title}</h3>
-                                    </div>
-                                </div>
-                            </a>
-                        `;
-                    }
-
-                    container.insertAdjacentHTML('beforeend', cardHTML);
-                });
-            }
-
-            // 3. Функція побудови вкладок навігації
-            function renderTabs() {
-                const tabsContainer = document.getElementById('tabs-container');
-                tabsContainer.innerHTML = '';
-
-                // Отримуємо список лише тих категорій, у яких є хоча б одна картка
-                const availableCategories = Object.keys(SSS_DATA.categories).filter(catId => {
-                    return processedItems.some(item => item.currentCategory === catId);
-                });
-
-                // Якщо поточна активна вкладка порожня — вибираємо першу доступну
-                if (!availableCategories.includes(activeTab) && availableCategories.length > 0) {
-                    activeTab = availableCategories[0];
-                }
-
-                availableCategories.forEach(catId => {
-                    const isActive = catId === activeTab;
-                    const btnClass = isActive 
-                        ? "flex-1 text-center pb-2 text-blue-600 border-b-2 border-blue-600 transition-all focus:outline-none"
-                        : "flex-1 text-center pb-2 text-gray-500 hover:text-blue-600 transition-all focus:outline-none";
-
-                    const buttonHTML = `
-                        <button onclick="window.switchTab('${catId}')" class="${btnClass}">
-                            ${SSS_DATA.categories[catId]}
-                        </button>
-                    `;
-                    tabsContainer.insertAdjacentHTML('beforeend', buttonHTML);
-                });
-            }
-
-            // Глобальний метод для зміни вкладки
-            window.switchTab = function(catId) {
-                activeTab = catId;
-                renderTabs();
-                renderItems();
-            }
-
-            // Перший запуск
             renderTabs();
-            renderItems();
+            renderCards();
+        }
+
+        // Рендеринг вкладок
+        function renderTabs() {
+            const container = document.getElementById('tabs-container');
+            container.innerHTML = '';
+
+            // Показуємо лише ті вкладки, в яких є елементи
+            const visibleCategories = Object.keys(CATEGORIES).filter(catId => {
+                return processedItems.some(item => item.currentCategory === catId);
+            });
+
+            if (!visibleCategories.includes(activeTab) && visibleCategories.length > 0) {
+                activeTab = visibleCategories[0];
+            }
+
+            visibleCategories.forEach(catId => {
+                const isActive = catId === activeTab;
+                const activeClasses = "text-primary border-b-2 border-primary";
+                const inactiveClasses = "text-gray-500 hover:text-primary";
+                
+                const btn = document.createElement('button');
+                btn.className = `flex-1 text-center pb-2 transition-all focus:outline-none ${isActive ? activeClasses : inactiveClasses}`;
+                btn.textContent = CATEGORIES[catId];
+                btn.onclick = () => {
+                    activeTab = catId;
+                    renderTabs();
+                    renderCards();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Рендеринг карток
+        function renderCards() {
+            const container = document.getElementById('content-container');
+            container.innerHTML = '';
+
+            const filtered = processedItems.filter(item => item.currentCategory === activeTab);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 py-12 text-sm">Тут поки нічого немає...</div>`;
+                return;
+            }
+
+            filtered.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "relative bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer";
+                
+                if (isAdmin) {
+                    card.setAttribute('draggable', 'true');
+                    card.addEventListener('dragstart', (e) => handleDragStart(e, index));
+                    card.addEventListener('dragover', handleDragOver);
+                    card.addEventListener('drop', (e) => handleDrop(e, index));
+                    card.addEventListener('dragend', handleDragEnd);
+                }
+
+                // Визначаємо подію кліку (якщо це не клік на елементи адмінки або кнопки реєстрації)
+                card.onclick = (e) => {
+                    if (e.target.closest('.admin-control') || e.target.closest('a') || e.target.closest('button')) {
+                        return;
+                    }
+                    window.open(item.url, '_blank');
+                };
+
+                // Внутрішня розмітка картки
+                let actionButtons = '';
+                if (item.regUrl) {
+                    actionButtons = `
+                        <div class="mt-4 flex gap-2 border-t pt-3 admin-control">
+                            <a href="${item.url}" target="_blank" class="flex-1 text-center text-xs font-semibold py-2.5 px-3 border border-primary text-primary rounded-lg hover:bg-gray-50 transition">
+                                Детальніше
+                            </a>
+                            ${item.isExpired ? `
+                                <button disabled class="flex-1 text-center text-xs font-semibold py-2.5 px-3 bg-gray-200 text-gray-400 rounded-lg cursor-not-allowed">
+                                    Завершено
+                                </button>
+                            ` : `
+                                <a href="${item.regUrl}" target="_blank" class="flex-1 text-center text-xs font-semibold py-2.5 px-3 bg-primary text-white rounded-lg hover:bg-opacity-95 transition">
+                                    Зареєструватись
+                                </a>
+                            `}
+                        </div>
+                    `;
+                }
+
+                // Меню "Три крапки" для адміна
+                const adminMenuHTML = isAdmin ? `
+                    <div class="absolute right-2 top-2 admin-control z-20">
+                        <button onclick="toggleDropdown(event, '${item.id}')" class="p-1 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition focus:outline-none">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                        </button>
+                        <div id="dropdown-${item.id}" class="hidden absolute right-0 mt-1 w-28 bg-white border rounded-lg shadow-lg text-xs overflow-hidden">
+                            <button onclick="editItem('${item.id}')" class="w-full text-left px-3 py-2 hover:bg-gray-100 text-navy font-semibold">Редагувати</button>
+                            <button onclick="deleteItem('${item.id}')" class="w-full text-left px-3 py-2 hover:bg-gray-50 text-crimson font-semibold">Видалити</button>
+                        </div>
+                    </div>
+                    <!-- Іконка перетягування ліворуч -->
+                    <div class="absolute left-2 top-2 text-gray-300 admin-control pointer-events-none">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 11H7V9h2v2zm4-2h-2v2h2V9zm4 0h-2v2h2V9zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"></path></svg>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    ${adminMenuHTML}
+                    <div class="p-4 ${isAdmin ? 'pl-8' : ''}">
+                        <div class="flex items-center gap-4">
+                            <div class="w-24 aspect-[547/318] bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                                <img class="w-full h-full object-cover" src="${item.image}" alt="${item.title}" onerror="this.src='https://placehold.co/547x318/f3f4f6/9ca3af?text=No+Photo'">
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-semibold text-sm leading-snug text-gray-900">${item.title}</h3>
+                            </div>
+                        </div>
+                        ${actionButtons}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // ================= АВТОРИЗАЦІЯ (MOCK AUTH) =================
+        function openLoginModal() {
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('admin-password').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('admin-password').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+        }
+
+        function login() {
+            const pass = document.getElementById('admin-password').value;
+            // Пароль за замовчуванням — "admin". Ви можете змінити його тут:
+            if (pass === 'admin') {
+                sessionStorage.setItem('sss_is_admin', 'true');
+                enableAdminMode();
+                closeLoginModal();
+                processDataAndRender();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('sss_is_admin');
+            isAdmin = false;
+            document.getElementById('admin-bar').classList.add('hidden');
+            document.getElementById('login-btn').classList.remove('hidden');
+            processDataAndRender();
+        }
+
+        function enableAdminMode() {
+            isAdmin = true;
+            document.getElementById('admin-bar').classList.remove('hidden');
+            document.getElementById('login-btn').classList.add('hidden');
+        }
+
+        // ================= DRAG & DROP СОРТУВАННЯ =================
+        let draggedIndex = null;
+        let dragSourceElement = null;
+
+        function handleDragStart(e, index) {
+            draggedIndex = index;
+            dragSourceElement = e.currentTarget;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e, targetIndex) {
+            e.preventDefault();
+            if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+            // Знаходимо картки поточної активної вкладки
+            const activeItems = processedItems.filter(i => i.currentCategory === activeTab);
+            const draggedItem = activeItems[draggedIndex];
+            const targetItem = activeItems[targetIndex];
+
+            // Визначаємо глобальні індекси у вихідному масиві items
+            const globalDraggedIdx = items.findIndex(i => i.id === draggedItem.id);
+            const globalTargetIdx = items.findIndex(i => i.id === targetItem.id);
+
+            if (globalDraggedIdx !== -1 && globalTargetIdx !== -1) {
+                // Переставляємо місцями у глобальному масиві
+                const [removed] = items.splice(globalDraggedIdx, 1);
+                items.splice(globalTargetIdx, 0, removed);
+                
+                localStorage.setItem('sss_hub_items', JSON.stringify(items));
+                processDataAndRender();
+            }
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            draggedIndex = null;
+        }
+
+        // ================= МЕНЮ РЕДАГУВАННЯ / ВИДАЛЕННЯ =================
+        function toggleDropdown(e, itemId) {
+            e.stopPropagation();
+            const targetDropdown = document.getElementById(`dropdown-${itemId}`);
+            
+            if (activeDropdownId && activeDropdownId !== itemId) {
+                document.getElementById(`dropdown-${activeDropdownId}`).classList.add('hidden');
+            }
+
+            targetDropdown.classList.toggle('hidden');
+            activeDropdownId = targetDropdown.classList.contains('hidden') ? null : itemId;
+        }
+
+        // Клік в будь-якому місці закриває випадаючі меню адмінки
+        document.addEventListener('click', () => {
+            if (activeDropdownId) {
+                document.getElementById(`dropdown-${activeDropdownId}`).classList.add('hidden');
+                activeDropdownId = null;
+            }
         });
+
+        // ================= МОДАЛКА РЕДАГУВАННЯ ТА ДОДАННЯ =================
+        function openModal() {
+            document.getElementById('item-modal').classList.remove('hidden');
+            document.getElementById('modal-title').textContent = "Додати посилання";
+            document.getElementById('edit-id').value = "";
+            
+            // Очищення полів
+            document.getElementById('item-title').value = "";
+            document.getElementById('item-url').value = "";
+            document.getElementById('item-reg-url').value = "";
+            document.getElementById('item-category').value = activeTab === 'archive' ? 'events' : activeTab;
+            document.getElementById('item-expire').value = "";
+            document.getElementById('item-file').value = "";
+            document.getElementById('item-image-url').value = "";
+            
+            uploadedBase64Image = "";
+            resetImagePreview();
+        }
+
+        function closeModal() {
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        // Обробка завантаженого файлу з комп'ютера
+        function previewUploadedImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedBase64Image = e.target.result;
+                document.getElementById('item-image-url').value = ""; // Очищаємо поле посилання
+                setImagePreview(uploadedBase64Image);
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // Обробка посилання на картинку з інтернету
+        function previewUrlImage() {
+            const url = document.getElementById('item-image-url').value;
+            if (url) {
+                uploadedBase64Image = ""; // Скидаємо файл
+                setImagePreview(url);
+            } else {
+                resetImagePreview();
+            }
+        }
+
+        function setImagePreview(src) {
+            const img = document.getElementById('img-preview');
+            img.src = src;
+            img.classList.remove('hidden');
+            document.getElementById('preview-text').classList.add('hidden');
+        }
+
+        function resetImagePreview() {
+            const img = document.getElementById('img-preview');
+            img.src = "";
+            img.classList.add('hidden');
+            document.getElementById('preview-text').classList.remove('hidden');
+        }
+
+        // Збереження змін
+        function saveItem() {
+            const editId = document.getElementById('edit-id').value;
+            const title = document.getElementById('item-title').value.trim();
+            const url = document.getElementById('item-url').value.trim();
+            const category = document.getElementById('item-category').value;
+            const regUrl = document.getElementById('item-reg-url').value.trim();
+            const expireDate = document.getElementById('item-expire').value;
+
+            // Визначаємо джерело фото
+            let image = "https://placehold.co/547x318/f3f4f6/9ca3af?text=No+Photo";
+            if (uploadedBase64Image) {
+                image = uploadedBase64Image;
+            } else {
+                const urlImg = document.getElementById('item-image-url').value.trim();
+                if (urlImg) image = urlImg;
+            }
+
+            if (!title || !url) {
+                alert("Будь ласка, заповніть обов'язкові поля (Заголовок та Посилання).");
+                return;
+            }
+
+            if (editId) {
+                // Редагування існуючого запису
+                const idx = items.findIndex(i => i.id === editId);
+                if (idx !== -1) {
+                    // Якщо картинку не було змінено, залишаємо стару
+                    const finalImage = (image.includes("No+Photo") && items[idx].image) ? items[idx].image : image;
+                    items[idx] = {
+                        ...items[idx],
+                        title,
+                        url,
+                        category,
+                        regUrl: regUrl || undefined,
+                        expireDate: expireDate || undefined,
+                        image: finalImage
+                    };
+                }
+            } else {
+                // Додавання нового запису
+                const newItem = {
+                    id: Date.now().toString(),
+                    title,
+                    url,
+                    category,
+                    image,
+                    regUrl: regUrl || undefined,
+                    expireDate: expireDate || undefined
+                };
+                items.unshift(newItem); // Нові посилання з'являються першими
+            }
+
+            localStorage.setItem('sss_hub_items', JSON.stringify(items));
+            closeModal();
+            processDataAndRender();
+        }
+
+        // Редагування запису (заповнення модалки існуючими даними)
+        function editItem(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            openModal();
+            document.getElementById('modal-title').textContent = "Редагувати посилання";
+            document.getElementById('edit-id').value = item.id;
+            
+            document.getElementById('item-title').value = item.title;
+            document.getElementById('item-url').value = item.url;
+            document.getElementById('item-category').value = item.category;
+            document.getElementById('item-reg-url').value = item.regUrl || "";
+            document.getElementById('item-expire').value = item.expireDate || "";
+            
+            if (item.image) {
+                if (item.image.startsWith("data:image")) {
+                    uploadedBase64Image = item.image;
+                } else {
+                    document.getElementById('item-image-url').value = item.image;
+                }
+                setImagePreview(item.image);
+            }
+        }
+
+        // Видалення запису
+        function deleteItem(itemId) {
+            if (confirm("Ви дійсно хочете видалити це посилання?")) {
+                items = items.filter(i => i.id !== itemId);
+                localStorage.setItem('sss_hub_items', JSON.stringify(items));
+                processDataAndRender();
+            }
+        }
+
+        // Експорт конфігурації у JSON-файл
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "sss_hub_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
     </script>
 </body>
 </html>
