@@ -157,7 +157,6 @@
                     <label class="block font-semibold mb-1 text-gray-700 flex items-center gap-1.5">
                         Дата завершення події <span class="text-xs text-gray-400 font-normal">(опціонально)</span>
                     </label>
-                    <!-- Текстове поле, до якого підключається Flatpickr -->
                     <input type="text" id="item-expire" placeholder="Оберіть дату" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
                 </div>
             </div>
@@ -175,7 +174,7 @@
         const SUPABASE_ANON_KEY = "sb_publishable_BGyc87lQIPlziBbIC2A_PQ_pGnlthMw";
 
         let supabaseClient = null;
-        let fpInstance = null; // Інстанс Flatpickr
+        let fpInstance = null;
 
         try {
             if (SUPABASE_URL.includes("ВАШ_ПРОЄКТ") || SUPABASE_ANON_KEY.includes("ВАШ_ПУБЛІЧНИЙ_ANON_KEY")) {
@@ -225,27 +224,28 @@
             }
         ];
 
+        // Оновлено назву "Реєстрація" на "Реєстрація на заходи"
         const MAIN_CATEGORIES = {
             news: "Новини",
-            events: "Реєстрація",
+            events: "Реєстрація на заходи",
             materials: "Корисні матеріали",
             archive: "Архів"
         };
 
+        // Тут змінено назву "Матеріали" на "Новини" для під-вкладки архіву
         const ARCHIVE_CATEGORIES = {
-            archive_materials: "Матеріали",
+            archive_materials: "Новини",
             archive_useful: "Корисні матеріали"
         };
 
         let items = [];
         let processedItems = [];
         let activeTab = 'news';
-        let inArchiveView = false; // Стан перегляду архіву
+        let inArchiveView = false;
         let isAdmin = false;
         let activeDropdownId = null;
         let localUploadedFile = null;
 
-        // Запускаємо ініціалізацію та ініціалізуємо Flatpickr
         (async () => {
             fpInstance = flatpickr("#item-expire", {
                 locale: "uk",
@@ -259,7 +259,6 @@
             await fetchItems();
         })();
 
-        // Завантаження даних з Supabase
         async function fetchItems() {
             if (!supabaseClient) {
                 console.log("Завантаження дефолтних посилань (локальний режим)...");
@@ -334,10 +333,9 @@
             processDataAndRender();
         }
 
-        // Обробка дат та ліміту в 10 посилань
         function processDataAndRender() {
             const now = new Date();
-            now.setHours(0, 0, 0, 0); // Порівнюємо виключно за днями
+            now.setHours(0, 0, 0, 0);
 
             const activeCounts = { news: 0, events: 0, materials: 0 };
 
@@ -354,19 +352,16 @@
                 }
 
                 if (isExpired) {
-                    // Усі застарілі новини та заходи переміщуються у розділ архівних матеріалів
                     currentCategory = 'archive_materials';
                 } else {
-                    // Перевіряємо ліміт у 10 елементів
                     if (activeCounts[item.category] < 10) {
                         activeCounts[item.category]++;
                         currentCategory = item.category;
                     } else {
-                        // Якщо ліміт перевищено
                         if (item.category === 'materials') {
-                            currentCategory = 'archive_useful'; // Корисні матеріали понад 10 шт.
+                            currentCategory = 'archive_useful';
                         } else {
-                            currentCategory = 'archive_materials'; // Новини та заходи понад 10 шт.
+                            currentCategory = 'archive_materials';
                         }
                     }
                 }
@@ -378,7 +373,6 @@
             renderCards();
         }
 
-        // Рендеринг вкладок (з урахуванням нової навігації архіву)
         function renderTabs() {
             const mainTabsContainer = document.getElementById('tabs-container');
             const archiveTabsContainer = document.getElementById('archive-tabs-container');
@@ -434,7 +428,6 @@
             }
         }
 
-        // Повернення до нормального вигляду на вкладку "Новини"
         function exitArchive() {
             inArchiveView = false;
             activeTab = 'news';
@@ -442,7 +435,6 @@
             renderCards();
         }
 
-        // Рендеринг карток
         function renderCards() {
             const container = document.getElementById('content-container');
             container.innerHTML = '';
@@ -532,12 +524,14 @@
             document.getElementById('admin-password').focus();
         }
 
+        // Очищення полів при закритті вікна входу
         function closeLoginModal() {
             document.getElementById('login-modal').classList.add('hidden');
             document.getElementById('admin-password').value = '';
             document.getElementById('login-error').classList.add('hidden');
         }
 
+        // Авторизація адміністратора
         function login() {
             const pass = document.getElementById('admin-password').value;
             if (pass === '6Vf–sneN=}N;:!n7NO8F') {
@@ -550,6 +544,7 @@
             }
         }
 
+        // Деавторизація
         function logout() {
             sessionStorage.removeItem('sss_is_admin');
             isAdmin = false;
@@ -575,6 +570,7 @@
 
         function handleDragOver(e) { e.preventDefault(); }
 
+        // Обробка завершення сортування
         async function handleDrop(e, targetIndex) {
             e.preventDefault();
             if (draggedIndex === null || draggedIndex === targetIndex) return;
@@ -635,6 +631,7 @@
             }
         }
 
+        // Клік в будь-якому місці екрана закриває відкриті меню
         document.addEventListener('click', () => {
             if (activeDropdownId) {
                 const dropdown = document.getElementById(`dropdown-${activeDropdownId}`);
@@ -643,7 +640,7 @@
             }
         });
 
-        // ================= МОДАЛКА ЗБЕРЕЖЕННЯ =================
+        // ================= КЕРУВАННЯ МОДАЛЬНИМИ ВІКНАМИ =================
         function openModal() {
             document.getElementById('item-modal').classList.remove('hidden');
             document.getElementById('modal-title').textContent = "Додати посилання";
@@ -653,14 +650,13 @@
             document.getElementById('item-url').value = "";
             document.getElementById('item-reg-url').value = "";
             
-            // Якщо зараз відкрита вкладка архіву, то за замовчуванням вибираємо першу категорію ("Новини")
             const isArchive = activeTab === 'archive_materials' || activeTab === 'archive_useful';
             document.getElementById('item-category').value = isArchive ? 'news' : activeTab;
             
             document.getElementById('item-file').value = "";
             document.getElementById('item-image-url').value = "";
             
-            if (fpInstance) fpInstance.clear(); // Очищаємо календар Flatpickr
+            if (fpInstance) fpInstance.clear(); // Очищення Flatpickr
             
             localUploadedFile = null;
             resetImagePreview();
@@ -670,6 +666,7 @@
             document.getElementById('item-modal').classList.add('hidden');
         }
 
+        // Попередній перегляд завантаженого зображення
         function previewUploadedImage(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -683,6 +680,7 @@
             reader.readAsDataURL(file);
         }
 
+        // Попередній перегляд зображення за URL
         function previewUrlImage() {
             const url = document.getElementById('item-image-url').value.trim();
             if (url) {
@@ -727,7 +725,7 @@
             return publicUrl;
         }
 
-        // Збереження картки в базу Supabase
+        // Збереження картки в базу Supabase або в пам'ять
         async function saveItem() {
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
@@ -738,7 +736,7 @@
             const url = document.getElementById('item-url').value.trim();
             const category = document.getElementById('item-category').value;
             const regUrl = document.getElementById('item-reg-url').value.trim();
-            const expireDate = document.getElementById('item-expire').value; // Отримуємо дату з Flatpickr
+            const expireDate = document.getElementById('item-expire').value;
 
             if (!title || !url) {
                 alert("Заповніть назву та посилання!");
@@ -770,19 +768,18 @@
 
                 if (supabaseClient) {
                     if (editId) {
-                        // Редагування елемента
                         const { error } = await supabaseClient
                             .from('hub_items')
                             .update(dbPayload)
                             .eq('id', editId);
                         if (error) throw error;
                     } else {
-                        // Додавання НОВОГО елемента: розраховуємо position так, щоб елемент став найпершим (position менший за всі наявні)
+                        // Вираховуємо нову позицію для першочергового відображення
                         let minPos = 0;
                         if (items.length > 0) {
                             minPos = Math.min(...items.map(i => i.position || 0));
                         }
-                        dbPayload.position = minPos - 1; // Робимо позицію найменшою, щоб сортування ascending вивело його першим
+                        dbPayload.position = minPos - 1;
 
                         const { error } = await supabaseClient
                             .from('hub_items')
@@ -792,7 +789,7 @@
                     closeModal();
                     await fetchItems();
                 } else {
-                    // Локальний режим (демо-режим без бази даних)
+                    // Локальний режим
                     if (editId) {
                         const idx = items.findIndex(i => i.id === editId);
                         if (idx !== -1) {
@@ -803,7 +800,6 @@
                         if (items.length > 0) {
                             minPos = Math.min(...items.map(i => i.position || 0));
                         }
-                        // Додаємо новий локальний елемент на початок масиву
                         items.unshift({ 
                             id: Date.now().toString(), 
                             title, 
@@ -827,7 +823,7 @@
             }
         }
 
-        // Заповнення полів форми перед редагуванням
+        // Завантаження даних елемента в форму для редагування
         function editItem(itemId) {
             const item = items.find(i => i.id === itemId);
             if (!item) return;
@@ -841,7 +837,6 @@
             document.getElementById('item-category').value = item.category;
             document.getElementById('item-reg-url').value = item.regUrl || "";
             
-            // Встановлюємо дату в Flatpickr
             if (item.expireDate && fpInstance) {
                 fpInstance.setDate(item.expireDate);
             } else if (fpInstance) {
@@ -858,7 +853,7 @@
             }
         }
 
-        // Видалення
+        // Видалення картки
         async function deleteItem(itemId) {
             if (confirm("Ви дійсно хочете видалити це посилання?")) {
                 if (supabaseClient) {
