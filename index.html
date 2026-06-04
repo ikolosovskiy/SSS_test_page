@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <!-- Хедер з логотипом та кнопкою Увійти (для кнопки додано z-30) -->
+    <!-- Хедер з логотипом та кнопкою Увійти -->
     <header class="w-full max-w-md flex flex-col items-center my-4 px-2 relative">
         <button id="login-btn" onclick="openLoginModal()" class="absolute right-2 top-0 z-30 text-xs border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
             Увійти
@@ -58,7 +58,7 @@
         </div>
     </header>
 
-    <!-- Навігація / Інтерактивні вкладки (генеруються динамічно через JS) -->
+    <!-- Навігація / Інтерактивні вкладки -->
     <div id="tabs-container" class="w-full max-w-md flex border-b mb-6 text-sm font-bold"></div>
 
     <!-- Основний контейнер для карток (без overflow-hidden, щоб меню не обрізалося) -->
@@ -131,7 +131,7 @@
                     <label class="block font-semibold mb-1 text-gray-700 flex items-center gap-1.5">
                         Посилання на реєстрацію <span class="text-xs text-gray-400 font-normal">(опціонально)</span>
                     </label>
-                    <input type="url" id="item-reg-url" placeholder="Для вкладки реєстрацій (якщо потрібна кнопка)" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
+                    <input type="url" id="item-reg-url" placeholder="Для вкладки реєстрацій" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
                 </div>
 
                 <div>
@@ -167,7 +167,7 @@
             console.error("Не вдалося ініціалізувати Supabase:", e);
         }
 
-        // ДЕФОЛТНІ ДАНІ (для автоматичного заповнення під час першого запуску)
+        // ДЕФОЛТНІ ДАНІ
         const DEFAULT_ITEMS = [
             {
                 id: "1",
@@ -180,7 +180,7 @@
                 id: "2",
                 title: "Послуги з шиття: як хаб у Миколаєві допомагає постраждалому населенню",
                 category: "news",
-                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-myколаievi-dopomahaie-postrazhdalomu-naselenniu/",
+                url: "https://sss-ua.org/news/posluhy-z-shyttia-yak-khab-u-mykolaievi-dopomahaie-postrazhdalomu-naselenniu/",
                 image: "https://sss-ua.org/wp-content/uploads/2026/05/pani-larisa-768x1024.jpg"
             },
             {
@@ -215,7 +215,8 @@
         let activeDropdownId = null;
         let localUploadedFile = null;
 
-        window.addEventListener('load', async () => {
+        // Використовуємо DOMContentLoaded для миттєвого запуску без очікування важких картинок
+        document.addEventListener('DOMContentLoaded', async () => {
             if (sessionStorage.getItem('sss_is_admin') === 'true') {
                 enableAdminMode();
             }
@@ -244,7 +245,7 @@
                     return;
                 }
 
-                // Якщо таблиця в Supabase ще порожня, завантажуємо туди дефолтний контент
+                // Автозаповнення порожньої бази даних
                 if (data.length === 0) {
                     console.log("База даних порожня. Запускаємо автозаповнення демо-даними...");
                     
@@ -298,7 +299,7 @@
             processDataAndRender();
         }
 
-        // Обробка дат та сортування (ліміт 10 елементів на категорію, старіші летять в архів)
+        // Обробка дат та сортування (ліміт 10 елементів на категорію)
         function processDataAndRender() {
             const now = new Date();
             const categoryCounts = { news: 0, events: 0, materials: 0 };
@@ -320,7 +321,7 @@
                     if (categoryCounts[item.category] < 10) {
                         categoryCounts[item.category]++;
                     } else {
-                        currentCategory = 'archive'; // Понад 10 посилань у вкладці автоматично йдуть в архів
+                        currentCategory = 'archive';
                     }
                 }
 
@@ -459,7 +460,6 @@
 
         function login() {
             const pass = document.getElementById('admin-password').value;
-            // Стандартний пароль
             if (pass === 'admin') {
                 sessionStorage.setItem('sss_is_admin', 'true');
                 enableAdminMode();
@@ -493,7 +493,6 @@
             e.dataTransfer.effectAllowed = 'move';
         }
 
-        // Дозволяємо перетягування
         function handleDragOver(e) { e.preventDefault(); }
 
         async function handleDrop(e, targetIndex) {
@@ -623,7 +622,7 @@
             document.getElementById('preview-text').classList.remove('hidden');
         }
 
-        // Завантаження фото в Supabase Storage (Public bucket 'hub-images')
+        // Завантаження фото в Supabase Storage
         async function uploadFileToSupabase(file) {
             if (!supabase) return "";
             const fileExt = file.name.split('.').pop();
@@ -701,7 +700,6 @@
                     closeModal();
                     await fetchItems();
                 } else {
-                    // Якщо Supabase не підключено — працюємо у пам'яті (демо-режим)
                     if (editId) {
                         const idx = items.findIndex(i => i.id === editId);
                         if (idx !== -1) {
