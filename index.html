@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSS-UA | Важливі посилання</title>
-    <!-- Підключаємо Tailwind CSS -->
+    <title>SSS | Links hub</title>
+
+    <link rel="icon" href="favicon.jpg" type="image/jpeg">
+    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Підключаємо бібліотеку Supabase -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Підключаємо Flatpickr для україномовного календаря -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/uk.js"></script>
 
     <script>
-        // Налаштування фірмових та акцентних кольорів організації в Tailwind
+   
         tailwind.config = {
             theme: {
                 extend: {
@@ -30,7 +32,7 @@
         }
     </script>
     <style>
-        /* Стиль для елемента, який перетягують */
+        
         .dragging {
             opacity: 0.5;
             border: 2px dashed #214e34;
@@ -39,7 +41,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col items-center p-4">
 
-    <!-- Панель адміна (показується тільки коли авторизовано) -->
+   
     <div id="admin-bar" class="w-full max-w-md bg-navy text-white text-xs px-4 py-2.5 rounded-xl mb-4 hidden flex items-center justify-between shadow-md">
         <span class="font-semibold flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Режим адміна
@@ -54,12 +56,9 @@
         </div>
     </div>
 
-    <!-- Хедер з логотипом та кнопкою Увійти -->
+
     <header class="w-full max-w-md flex flex-col items-center my-4 px-2 relative">
-        <button id="login-btn" onclick="openLoginModal()" class="absolute right-2 top-0 z-30 text-xs border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
-            Увійти
-        </button>
-        <div class="w-full flex items-center justify-center mt-8">
+        <div class="w-full flex items-center justify-center mt-4">
             <img src="./1-02.png" alt="SSS Logo" class="w-full h-auto max-h-24 object-contain" onerror="this.src='https://sss-ua.org/wp-content/uploads/2022/11/logo_main.png'">
         </div>
     </header>
@@ -67,15 +66,15 @@
     <!-- Контейнер навігації (Вкладки) -->
     <div id="tabs-wrapper" class="w-full max-w-md mb-6">
         <!-- Стандартні вкладки -->
-        <div id="tabs-container" class="flex border-b text-sm font-bold w-full"></div>
+        <div id="tabs-container" class="flex border-b text-xs font-bold w-full overflow-x-auto gap-1"></div>
         
-        <!-- Архівні вкладки -->
+        <!-- Архівні/Суб-вкладки -->
         <div id="archive-tabs-container" class="hidden w-full">
             <!-- Кнопка Назад -->
-            <button id="back-btn" onclick="exitArchive()" class="w-full mb-4 flex items-center justify-center gap-1.5 py-2.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-lg font-bold text-xs transition">
+            <button id="back-btn" onclick="exitSubView()" class="w-full mb-4 flex items-center justify-center gap-1.5 py-2.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-lg font-bold text-xs transition">
                 ← Назад
             </button>
-            <!-- Під-вкладки архіву -->
+            <!-- Під-вкладки -->
             <div id="archive-subtabs" class="flex border-b text-xs font-bold w-full"></div>
         </div>
     </div>
@@ -83,9 +82,92 @@
     <!-- Основний контейнер для карток -->
     <main id="content-container" class="w-full max-w-md space-y-4"></main>
 
-    <!-- Футер -->
-    <footer class="mt-12 mb-6 text-xs text-gray-400 text-center">
-        © 2026 БФ «Стабілізейшен Суппорт Сервісез»
+    <!-- ================= ЗАКРІПЛЕНІ ПОСИЛАННЯ ТА ГАРЯЧА ЛІНІЯ ================= -->
+    <div class="w-full max-w-md mt-6 px-1">
+        <!-- Синя лінія (фірмовий колір) -->
+        <div class="h-[2px] bg-navy w-full my-4"></div>
+        
+        <!-- Закріплені посилання -->
+        <div class="space-y-3">
+            <a href="https://www.facebook.com/WomanGAME" target="_blank" class="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <span class="font-semibold text-sm text-gray-800">Придбати гру «Бути жінкою»</span>
+                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+            <a href="https://send.monobank.ua/jar/544hBBQBy3" target="_blank" class="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <span class="font-semibold text-sm text-gray-800">Підтримати фонд (Monobank)</span>
+                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+            <a href="https://sss-ua.org/pidtrymaty/" target="_blank" class="flex items-center justify-between p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
+                <span class="font-semibold text-sm text-gray-800">Підтримати фонд (реквізити)</span>
+                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Жовта лінія (фірмовий колір фонду) -->
+        <div class="h-[2px] bg-accentGold w-full my-4"></div>
+
+        <!-- Гаряча лінія -->
+        <div class="text-center py-2">
+            <a href="tel:0800332740" class="inline-flex items-center gap-1.5 font-bold text-base hover:opacity-90 transition">
+                <span class="text-gray-800">Гаряча лінія БФ «ССС»</span>
+                <span class="text-accentGold">0 800 332 740</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ================= СОЦІАЛЬНІ МЕРЕЖІ ================= -->
+    <div class="flex justify-center items-center gap-3 mt-8 mb-2">
+        <!-- Вебсайт -->
+        <a href="https://sss-ua.org/" target="_blank" class="p-2 text-gray-400 hover:text-primary transition" title="Вебсайт">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 014.5 9c0 3.1-1.6 6-4.5 9s-4.5-5.9-4.5-9 1.6-6 4.5-9z"></path>
+            </svg>
+        </a>
+        <!-- Facebook -->
+        <a href="https://www.facebook.com/stabilizationsupportservices" target="_blank" class="p-2 text-gray-400 hover:text-primary transition" title="Facebook">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/>
+            </svg>
+        </a>
+        <!-- Instagram -->
+        <a href="https://www.instagram.com/stabilizationsupportservices/" target="_blank" class="p-2 text-gray-400 hover:text-primary transition" title="Instagram">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+            </svg>
+        </a>
+        <!-- Twitter/X -->
+        <a href="https://x.com/SSS_Ukraine" target="_blank" class="p-2.5 text-gray-400 hover:text-primary transition" title="X (Twitter)">
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+        </a>
+        <!-- YouTube -->
+        <a href="https://www.youtube.com/channel/UC3nkNFUE6uUldRGf1KTfxqw" target="_blank" class="p-2 text-gray-400 hover:text-primary transition" title="YouTube">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.508a3.003 3.003 0 00-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 002.11 2.11c1.871.508 9.388.508 9.388.508s7.517 0 9.388-.508a3.003 3.003 0 002.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+        </a>
+        <!-- Telegram -->
+        <a href="https://t.me/sss_ukraine" target="_blank" class="p-2.5 text-gray-400 hover:text-primary transition" title="Telegram">
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.66-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.73 7.59-3.25 3.61-1.48 4.36-1.74 4.85-1.75.11 0 .35.03.5.16.13.1.17.24.18.34z"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- Футер з кнопкою Увійти внизу -->
+    <footer class="mb-6 text-[10px] text-gray-400 text-center flex flex-col items-center gap-3">
+        <span>© 2026 БФ «Стабілізейшен Суппорт Сервісез»</span>
+        <button id="login-btn" onclick="openLoginModal()" class="text-[10px] border border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
+            Увійти
+        </button>
     </footer>
 
     <!-- ================= МОДАЛЬНЕ ВІКНО: ВХІД ================= -->
@@ -123,8 +205,10 @@
                     <label class="block font-semibold mb-1 text-gray-700">Категорія</label>
                     <select id="item-category" class="w-full border p-2.5 rounded-lg focus:outline-none focus:border-primary">
                         <option value="news">Новини</option>
-                        <option value="events">Реєстрація</option>
+                        <option value="events">Реєстрація на заходи</option>
                         <option value="materials">Корисні матеріали</option>
+                        <option value="vpo_materials">Ради ВПО: Матеріали</option>
+                        <option value="vpo_links">Ради ВПО: Корисні посилання</option>
                     </select>
                 </div>
 
@@ -224,24 +308,29 @@
             }
         ];
 
-        // Оновлено назву "Реєстрація" на "Реєстрація на заходи"
         const MAIN_CATEGORIES = {
             news: "Новини",
             events: "Реєстрація на заходи",
             materials: "Корисні матеріали",
+            vpo: "Все для рад ВПО",
             archive: "Архів"
         };
 
-        // Тут змінено назву "Матеріали" на "Новини" для під-вкладки архіву
         const ARCHIVE_CATEGORIES = {
             archive_materials: "Новини",
             archive_useful: "Корисні матеріали"
+        };
+
+        const VPO_CATEGORIES = {
+            vpo_materials: "Матеріали",
+            vpo_links: "Корисні посилання"
         };
 
         let items = [];
         let processedItems = [];
         let activeTab = 'news';
         let inArchiveView = false;
+        let inVpoView = false;
         let isAdmin = false;
         let activeDropdownId = null;
         let localUploadedFile = null;
@@ -354,15 +443,20 @@
                 if (isExpired) {
                     currentCategory = 'archive_materials';
                 } else {
-                    if (activeCounts[item.category] < 10) {
-                        activeCounts[item.category]++;
-                        currentCategory = item.category;
-                    } else {
-                        if (item.category === 'materials') {
-                            currentCategory = 'archive_useful';
+                    if (['news', 'events', 'materials'].includes(item.category)) {
+                        if (activeCounts[item.category] < 10) {
+                            activeCounts[item.category]++;
+                            currentCategory = item.category;
                         } else {
-                            currentCategory = 'archive_materials';
+                            if (item.category === 'materials') {
+                                currentCategory = 'archive_useful';
+                            } else {
+                                currentCategory = 'archive_materials';
+                            }
                         }
+                    } else {
+                        // Категорії Ради ВПО залишаються без автоматичного архівування
+                        currentCategory = item.category;
                     }
                 }
 
@@ -375,33 +469,35 @@
 
         function renderTabs() {
             const mainTabsContainer = document.getElementById('tabs-container');
-            const archiveTabsContainer = document.getElementById('archive-tabs-container');
-            const archiveSubtabsContainer = document.getElementById('archive-subtabs');
+            const subTabsContainer = document.getElementById('archive-tabs-container');
+            const subtabsInner = document.getElementById('archive-subtabs');
 
-            if (inArchiveView) {
+            if (inArchiveView || inVpoView) {
                 mainTabsContainer.classList.add('hidden');
-                archiveTabsContainer.classList.remove('hidden');
+                subTabsContainer.classList.remove('hidden');
 
-                archiveSubtabsContainer.innerHTML = '';
-                Object.keys(ARCHIVE_CATEGORIES).forEach(catId => {
+                subtabsInner.innerHTML = '';
+                const currentSubCats = inArchiveView ? ARCHIVE_CATEGORIES : VPO_CATEGORIES;
+
+                Object.keys(currentSubCats).forEach(catId => {
                     const isActive = catId === activeTab;
                     const activeClasses = "text-primary border-b-2 border-primary";
                     const inactiveClasses = "text-gray-500 hover:text-primary";
                     
                     const btn = document.createElement('button');
                     btn.className = `flex-1 text-center pb-2.5 transition-all focus:outline-none ${isActive ? activeClasses : inactiveClasses}`;
-                    btn.textContent = ARCHIVE_CATEGORIES[catId];
+                    btn.textContent = currentSubCats[catId];
                     btn.onclick = () => {
                         activeTab = catId;
                         renderTabs();
                         renderCards();
                     };
-                    archiveSubtabsContainer.appendChild(btn);
+                    subtabsInner.appendChild(btn);
                 });
 
             } else {
                 mainTabsContainer.classList.remove('hidden');
-                archiveTabsContainer.classList.add('hidden');
+                subTabsContainer.classList.add('hidden');
 
                 mainTabsContainer.innerHTML = '';
                 Object.keys(MAIN_CATEGORIES).forEach(catId => {
@@ -410,14 +506,20 @@
                     const inactiveClasses = "text-gray-500 hover:text-primary";
                     
                     const btn = document.createElement('button');
-                    btn.className = `flex-1 text-center pb-2.5 transition-all focus:outline-none ${isActive ? activeClasses : inactiveClasses}`;
+                    btn.className = `flex-1 text-center pb-2.5 transition-all focus:outline-none text-[11px] xs:text-xs ${isActive ? activeClasses : inactiveClasses}`;
                     btn.textContent = MAIN_CATEGORIES[catId];
                     btn.onclick = () => {
                         if (catId === 'archive') {
                             inArchiveView = true;
+                            inVpoView = false;
                             activeTab = 'archive_materials';
+                        } else if (catId === 'vpo') {
+                            inArchiveView = false;
+                            inVpoView = true;
+                            activeTab = 'vpo_materials';
                         } else {
                             inArchiveView = false;
+                            inVpoView = false;
                             activeTab = catId;
                         }
                         renderTabs();
@@ -428,8 +530,9 @@
             }
         }
 
-        function exitArchive() {
+        function exitSubView() {
             inArchiveView = false;
+            inVpoView = false;
             activeTab = 'news';
             renderTabs();
             renderCards();
@@ -651,7 +754,15 @@
             document.getElementById('item-reg-url').value = "";
             
             const isArchive = activeTab === 'archive_materials' || activeTab === 'archive_useful';
-            document.getElementById('item-category').value = isArchive ? 'news' : activeTab;
+            const isVpo = activeTab === 'vpo_materials' || activeTab === 'vpo_links';
+            
+            if (isArchive) {
+                document.getElementById('item-category').value = 'news';
+            } else if (isVpo) {
+                document.getElementById('item-category').value = activeTab;
+            } else {
+                document.getElementById('item-category').value = activeTab;
+            }
             
             document.getElementById('item-file').value = "";
             document.getElementById('item-image-url').value = "";
