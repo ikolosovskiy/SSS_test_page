@@ -95,7 +95,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </span>
-                <input type="text" id="search-input" placeholder="Пошук" class="w-full border border-gray-200 pl-10 pr-10 py-2.5 rounded-xl text-sm focus:outline-none focus:border-primary bg-white shadow-sm" onkeydown="if(event.key === 'Enter') performSearch()">
+                <!-- Задано text-[16px] для запобігання масштабуванню на iOS та placeholder "Пошук" -->
+                <input type="text" id="search-input" placeholder="Пошук" class="w-full border border-gray-200 pl-10 pr-10 py-2.5 rounded-xl text-[16px] focus:outline-none focus:border-primary bg-white shadow-sm" onkeydown="if(event.key === 'Enter') performSearch()">
                 <!-- Кнопка швидкого очищення (хрестик) -->
                 <button id="clear-search-btn" onclick="clearSearchInput()" class="hidden absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -103,7 +104,7 @@
                     </svg>
                 </button>
             </div>
-            <button onclick="performSearch()" class="bg-primary hover:bg-opacity-90 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition duration-200 shadow-sm">
+            <button onclick="performSearch()" class="bg-primary hover:bg-opacity-90 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center justify-center">
                 Знайти
             </button>
         </div>
