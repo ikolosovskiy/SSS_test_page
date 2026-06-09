@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSS | Links hub</title>
 
-    <link rel="icon" href="favicon.jpg" type="image/jpeg">
+    <link class="rounded-full" rel="icon" href="favicon.jpg" type="image/jpeg">
     
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,8 +82,35 @@
     <!-- Основний контейнер для карток -->
     <main id="content-container" class="w-full max-w-md space-y-4"></main>
 
-    <!-- ================= ЗАКРІПЛЕНІ ПОСИЛАННЯ ТА ГАРЯЧА ЛІНІЯ ================= -->
+    <!-- ================= БЛОК ПОШУКУ ================= -->
     <div class="w-full max-w-md mt-6 px-1">
+        <!-- Червона лінія (фірмовий колір) -->
+        <div class="h-[2px] bg-crimson w-full my-4"></div>
+        
+        <div class="flex gap-2">
+            <div class="relative flex-grow">
+                <!-- Іконка лупи -->
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </span>
+                <input type="text" id="search-input" placeholder="Пошук" class="w-full border border-gray-200 pl-10 pr-10 py-2.5 rounded-xl text-sm focus:outline-none focus:border-primary bg-white shadow-sm" onkeydown="if(event.key === 'Enter') performSearch()">
+                <!-- Кнопка швидкого очищення (хрестик) -->
+                <button id="clear-search-btn" onclick="clearSearchInput()" class="hidden absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <button onclick="performSearch()" class="bg-primary hover:bg-opacity-90 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition duration-200 shadow-sm">
+                Знайти
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= ЗАКРІПЛЕНІ ПОСИЛАННЯ ТА ГАРЯЧА ЛІНІЯ ================= -->
+    <div class="w-full max-w-md mt-2 px-1">
         <!-- Синя лінія (фірмовий колір) -->
         <div class="h-[2px] bg-navy w-full my-4"></div>
         
@@ -328,6 +355,7 @@
         let isAdmin = false;
         let activeDropdownId = null;
         let localUploadedFile = null;
+        let searchQuery = '';
 
         (async () => {
             fpInstance = flatpickr("#item-expire", {
@@ -340,6 +368,22 @@
                 enableAdminMode();
             }
             await fetchItems();
+
+            // Ініціалізуємо слухач для інпуту пошуку
+            const searchInput = document.getElementById('search-input');
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const val = e.target.value.trim();
+                    if (val === '') {
+                        searchQuery = '';
+                        if (clearBtn) clearBtn.classList.add('hidden');
+                        renderCards();
+                    } else {
+                        if (clearBtn) clearBtn.classList.remove('hidden');
+                    }
+                });
+            }
         })();
 
         async function fetchItems() {
@@ -449,7 +493,6 @@
                             }
                         }
                     } else {
-                        // Категорії Ради ВПО залишаються без автоматичного архівування
                         currentCategory = item.category;
                     }
                 }
@@ -482,6 +525,7 @@
                     btn.className = `flex-1 text-center pb-2.5 transition-all focus:outline-none ${isActive ? activeClasses : inactiveClasses}`;
                     btn.textContent = currentSubCats[catId];
                     btn.onclick = () => {
+                        clearSearch();
                         activeTab = catId;
                         renderTabs();
                         renderCards();
@@ -503,6 +547,7 @@
                     btn.className = `flex-1 text-center pb-2.5 transition-all focus:outline-none text-[11px] xs:text-xs ${isActive ? activeClasses : inactiveClasses}`;
                     btn.textContent = MAIN_CATEGORIES[catId];
                     btn.onclick = () => {
+                        clearSearch();
                         if (catId === 'archive') {
                             inArchiveView = true;
                             inVpoView = false;
@@ -525,6 +570,7 @@
         }
 
         function exitSubView() {
+            clearSearch();
             inArchiveView = false;
             inVpoView = false;
             activeTab = 'news';
@@ -536,7 +582,15 @@
             const container = document.getElementById('content-container');
             container.innerHTML = '';
 
-            const filtered = processedItems.filter(item => item.currentCategory === activeTab);
+            let filtered = [];
+
+            if (searchQuery) {
+                // Глобальний адаптивний пошук по всіх існуючих картках
+                filtered = processedItems.filter(item => matchAdaptive(item.title, searchQuery));
+            } else {
+                // Звичайне фільтрування за активною вкладкою
+                filtered = processedItems.filter(item => item.currentCategory === activeTab);
+            }
 
             if (filtered.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-400 py-12 text-sm">Тут поки нічого немає...</div>`;
@@ -547,7 +601,8 @@
                 const card = document.createElement('div');
                 card.className = "relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer";
                 
-                if (isAdmin) {
+                // Вимикаємо drag & drop сортування під час пошуку, щоб запобігти зсуву індексів різних категорій
+                if (isAdmin && !searchQuery) {
                     card.setAttribute('draggable', 'true');
                     card.addEventListener('dragstart', (e) => handleDragStart(e, index));
                     card.addEventListener('dragover', handleDragOver);
@@ -598,7 +653,7 @@
 
                 card.innerHTML = `
                     ${adminMenuHTML}
-                    <div class="p-4 ${isAdmin ? 'pl-8' : ''}">
+                    <div class="p-4 ${isAdmin && !searchQuery ? 'pl-8' : ''}">
                         <div class="flex items-center gap-4">
                             <div class="w-24 aspect-[547/318] bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
                                 <img class="w-full h-full object-cover" src="${item.image}" alt="${item.title}" onerror="this.src='https://placehold.co/547x318/f3f4f6/9ca3af?text=No+Photo'">
@@ -615,20 +670,70 @@
             });
         }
 
+        // ================= АДАПТИВНИЙ ПОШУК =================
+        function getUkrainianStems(text) {
+            return text
+                .toLowerCase()
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?\"']/g, "") // видалення пунктуації
+                .split(/\s+/)
+                .filter(word => word.length > 0)
+                .map(word => {
+                    if (word.length <= 3) return word;
+                    // Відкидання поширених закінчень для пошуку за основою
+                    return word
+                        .replace(/(ими|ями|ові|еві|ами|ями|иму)$/, '')
+                        .replace(/(ий|ій|ому|ему|ах|ях|ів|ях)$/, '')
+                        .replace(/(и|і|а|я|у|е|о)$/, '');
+                });
+        }
+
+        function matchAdaptive(title, query) {
+            const queryStems = getUkrainianStems(query);
+            const titleClean = title.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?\"']/g, "");
+            
+            if (queryStems.length === 0) return false;
+
+            // Картка підходить, якщо в її назві присутні всі основи слів із запиту
+            return queryStems.every(stem => titleClean.includes(stem));
+        }
+
+        function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchQuery = searchInput.value.trim().toLowerCase();
+                renderCards();
+            }
+        }
+
+        function clearSearch() {
+            searchQuery = '';
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (clearBtn) {
+                clearBtn.classList.add('hidden');
+            }
+        }
+
+        function clearSearchInput() {
+            clearSearch();
+            renderCards();
+        }
+
         // ================= АВТОРИЗАЦІЯ =================
         function openLoginModal() {
             document.getElementById('login-modal').classList.remove('hidden');
             document.getElementById('admin-password').focus();
         }
 
-        // Очищення полів при закритті вікна входу
         function closeLoginModal() {
             document.getElementById('login-modal').classList.add('hidden');
             document.getElementById('admin-password').value = '';
             document.getElementById('login-error').classList.add('hidden');
         }
 
-        // Авторизація адміністратора
         function login() {
             const pass = document.getElementById('admin-password').value;
             if (pass === '6Vf–sneN=}N;:!n7NO8F') {
@@ -641,7 +746,6 @@
             }
         }
 
-        // Деавторизація
         function logout() {
             sessionStorage.removeItem('sss_is_admin');
             isAdmin = false;
@@ -667,7 +771,6 @@
 
         function handleDragOver(e) { e.preventDefault(); }
 
-        // Обробка завершення сортування
         async function handleDrop(e, targetIndex) {
             e.preventDefault();
             if (draggedIndex === null || draggedIndex === targetIndex) return;
@@ -728,7 +831,6 @@
             }
         }
 
-        // Клік в будь-якому місці екрана закриває відкриті меню
         document.addEventListener('click', () => {
             if (activeDropdownId) {
                 const dropdown = document.getElementById(`dropdown-${activeDropdownId}`);
@@ -761,7 +863,7 @@
             document.getElementById('item-file').value = "";
             document.getElementById('item-image-url').value = "";
             
-            if (fpInstance) fpInstance.clear(); // Очищення Flatpickr
+            if (fpInstance) fpInstance.clear();
             
             localUploadedFile = null;
             resetImagePreview();
@@ -771,7 +873,6 @@
             document.getElementById('item-modal').classList.add('hidden');
         }
 
-        // Попередній перегляд завантаженого зображення
         function previewUploadedImage(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -785,7 +886,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Попередній перегляд зображення за URL
         function previewUrlImage() {
             const url = document.getElementById('item-image-url').value.trim();
             if (url) {
@@ -810,7 +910,6 @@
             document.getElementById('preview-text').classList.remove('hidden');
         }
 
-        // Завантаження фото в Supabase Storage (Public bucket 'hub-images')
         async function uploadFileToSupabase(file) {
             if (!supabaseClient) return "";
             const fileExt = file.name.split('.').pop();
@@ -830,7 +929,6 @@
             return publicUrl;
         }
 
-        // Збереження картки в базу Supabase або в пам'ять
         async function saveItem() {
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
@@ -879,7 +977,6 @@
                             .eq('id', editId);
                         if (error) throw error;
                     } else {
-                        // Вираховуємо нову позицію для першочергового відображення
                         let minPos = 0;
                         if (items.length > 0) {
                             minPos = Math.min(...items.map(i => i.position || 0));
@@ -894,7 +991,6 @@
                     closeModal();
                     await fetchItems();
                 } else {
-                    // Локальний режим
                     if (editId) {
                         const idx = items.findIndex(i => i.id === editId);
                         if (idx !== -1) {
@@ -928,7 +1024,6 @@
             }
         }
 
-        // Завантаження даних елемента в форму для редагування
         function editItem(itemId) {
             const item = items.find(i => i.id === itemId);
             if (!item) return;
@@ -958,7 +1053,6 @@
             }
         }
 
-        // Видалення картки
         async function deleteItem(itemId) {
             if (confirm("Ви дійсно хочете видалити це посилання?")) {
                 if (supabaseClient) {
